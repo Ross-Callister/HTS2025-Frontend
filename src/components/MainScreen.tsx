@@ -1,24 +1,31 @@
 import React from "react";
 import FilterWidget from "./FilterWidget";
+import VolumeSlider from "./VolumeSlider";
 
 interface MainScreenProps {
   content: string;
 }
 
 const WIDGET_MARKER = "{{FilterWidget}}";
+const VOLUME_MARKER = "{{VolumeSlider}}";
 
 const MainScreen: React.FC<MainScreenProps> = ({ content }) => {
-  // Split the content by the widget marker and interleave with the widget
-  const parts = content.split(WIDGET_MARKER);
+  // Split the content by the widget markers and interleave with the widgets
+  const parts = content.split(
+    new RegExp(`(${WIDGET_MARKER}|${VOLUME_MARKER})`)
+  );
 
   return (
     <div className="main-screen">
-      {parts.map((part, idx) => (
-        <React.Fragment key={idx}>
-          {part}
-          {idx < parts.length - 1 && <FilterWidget />}
-        </React.Fragment>
-      ))}
+      {parts.map((part, idx) => {
+        if (part === WIDGET_MARKER) {
+          return <FilterWidget key={idx} />;
+        } else if (part === VOLUME_MARKER) {
+          return <VolumeSlider key={idx} />;
+        } else {
+          return <React.Fragment key={idx}>{part}</React.Fragment>;
+        }
+      })}
     </div>
   );
 };

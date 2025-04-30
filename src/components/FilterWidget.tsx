@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import "./FilterWidget.css";
 
 const filterOptions = ["Option 1", "Option 2", "Option 3"];
 

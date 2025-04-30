@@ -1,0 +1,19 @@
+.filter-widget {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filter-widget span {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.filter-widget label {
+  margin-left: 8px;
+  font-size: 14px;
+}

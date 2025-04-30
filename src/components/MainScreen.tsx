@@ -19,9 +19,9 @@ const MainScreen: React.FC<MainScreenProps> = ({ content }) => {
     <div className="main-screen">
       {parts.map((part, idx) => {
         if (part === WIDGET_MARKER) {
-          return <FilterWidget key={idx} />;
+          return <FilterWidget key={idx} turbo xray reverse />;
         } else if (part === VOLUME_MARKER) {
-          return <VolumeSlider key={idx} />;
+          return <VolumeSlider key={idx} initialVolume={50} />;
         } else {
           return <React.Fragment key={idx}>{part}</React.Fragment>;
         }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./Chat.css";
 import { parseWidgets } from "../utils/widgetParser";
+import { ApiClient } from "../services/api";
 
 interface Message {
   id: number;
@@ -10,24 +11,57 @@ interface Message {
 
 interface MainScreenProps {}
 
-type Role = "user" | "assistant";
+const apiClient = new ApiClient();
 
 const MainScreen: React.FC<MainScreenProps> = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendMessage = (role: Role) => {
-    if (!newMessage.trim()) return;
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || isLoading) return;
 
+    setIsLoading(true);
+    const userMessage = newMessage.trim();
+
+    // Add user message immediately
     setMessages((prev) => [
       ...prev,
       {
         id: Date.now(),
-        role: role,
-        content: newMessage.trim(),
+        role: "user",
+        content: userMessage,
       },
     ]);
     setNewMessage("");
+
+    try {
+      // Get response from API
+      const response = await apiClient.widgets(userMessage);
+
+      // Add assistant message with response
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          role: "assistant",
+          content: response.response,
+        },
+      ]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      // Add error message
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          role: "assistant",
+          content: "Sorry, there was an error processing your message.",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderMessage = (message: Message) => {
@@ -52,15 +86,17 @@ const MainScreen: React.FC<MainScreenProps> = () => {
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          onKeyUp={(e) => e.key === "Enter" && handleSendMessage("user")}
+          onKeyUp={(e) => e.key === "Enter" && handleSendMessage()}
           placeholder="Type a message..."
           className="message-input"
+          disabled={isLoading}
         />
         <button
-          onClick={() => handleSendMessage("user")}
+          onClick={handleSendMessage}
           className="send-button"
+          disabled={isLoading}
         >
-          Send
+          {isLoading ? "Sending..." : "Send"}
         </button>
       </div>
     </div>

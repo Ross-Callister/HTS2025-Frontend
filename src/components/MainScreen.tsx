@@ -1,53 +1,70 @@
-import React from "react";
-import FilterWidget from "./FilterWidget";
-import VolumeSlider from "./VolumeSlider";
+import React, { useState } from "react";
+import "./Chat.css";
+import { parseWidgets } from "../utils/widgetParser";
 
-interface MainScreenProps {
+interface Message {
+  id: number;
+  role: "user" | "assistant";
   content: string;
 }
 
-const widgetMap: { [key: string]: React.FC<any> } = {
-  FilterWidget,
-  VolumeSlider,
-};
+interface MainScreenProps {}
 
-type JSONShape = {
-  widget: string;
-  props: { [key: string]: any };
-};
+type Role = "user" | "assistant";
 
-const MainScreen: React.FC<MainScreenProps> = ({ content }) => {
-  // Regex to match JSON-like widget definitions
-  const widgetRegex =
-    /{{\s*("widget":\s*"[^"]+",\s*"props":\s*{[\s\S]*?})\s*}}/g;
+const MainScreen: React.FC<MainScreenProps> = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
 
-  const parts = [];
-  let lastIndex = 0;
-  let match;
+  const handleSendMessage = (role: Role) => {
+    if (!newMessage.trim()) return;
 
-  while ((match = widgetRegex.exec(content)) !== null) {
-    const jsonStr = `{${match[1]}}`;
-    try {
-      const json = JSON.parse(jsonStr) as JSONShape;
-      const WidgetComponent = widgetMap[json.widget];
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        role: role,
+        content: newMessage.trim(),
+      },
+    ]);
+    setNewMessage("");
+  };
 
-      if (WidgetComponent) {
-        // Push text before the widget
-        parts.push(content.slice(lastIndex, match.index));
-        // Push the widget component
-        parts.push(<WidgetComponent key={match.index} {...json.props} />);
-      }
-    } catch (error) {
-      console.error("Failed to parse widget JSON:", error);
-    }
+  const renderMessage = (message: Message) => {
+    const content =
+      message.role === "assistant"
+        ? parseWidgets(message.content)
+        : message.content;
 
-    lastIndex = widgetRegex.lastIndex;
-  }
+    return (
+      <div key={message.id} className={`message ${message.role}`}>
+        {content}
+      </div>
+    );
+  };
 
-  // Push remaining text after the last widget
-  parts.push(content.slice(lastIndex));
+  return (
+    <div className="chat-container">
+      {messages.map(renderMessage)}
 
-  return <div className="main-screen">{parts}</div>;
+      <div className="message-input-container">
+        <input
+          type="text"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyUp={(e) => e.key === "Enter" && handleSendMessage("user")}
+          placeholder="Type a message..."
+          className="message-input"
+        />
+        <button
+          onClick={() => handleSendMessage("user")}
+          className="send-button"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default MainScreen;

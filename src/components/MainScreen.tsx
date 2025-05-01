@@ -6,28 +6,48 @@ interface MainScreenProps {
   content: string;
 }
 
-const WIDGET_MARKER = "{{FilterWidget}}";
-const VOLUME_MARKER = "{{VolumeSlider}}";
+const widgetMap: { [key: string]: React.FC<any> } = {
+  FilterWidget,
+  VolumeSlider,
+};
+
+type JSONShape = {
+  widget: string;
+  props: { [key: string]: any };
+};
 
 const MainScreen: React.FC<MainScreenProps> = ({ content }) => {
-  // Split the content by the widget markers and interleave with the widgets
-  const parts = content.split(
-    new RegExp(`(${WIDGET_MARKER}|${VOLUME_MARKER})`)
-  );
+  // Regex to match JSON-like widget definitions
+  const widgetRegex =
+    /{{\s*("widget":\s*"[^"]+",\s*"props":\s*{[\s\S]*?})\s*}}/g;
 
-  return (
-    <div className="main-screen">
-      {parts.map((part, idx) => {
-        if (part === WIDGET_MARKER) {
-          return <FilterWidget key={idx} turbo xray reverse />;
-        } else if (part === VOLUME_MARKER) {
-          return <VolumeSlider key={idx} initialVolume={50} />;
-        } else {
-          return <React.Fragment key={idx}>{part}</React.Fragment>;
-        }
-      })}
-    </div>
-  );
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = widgetRegex.exec(content)) !== null) {
+    const jsonStr = `{${match[1]}}`;
+    try {
+      const json = JSON.parse(jsonStr) as JSONShape;
+      const WidgetComponent = widgetMap[json.widget];
+
+      if (WidgetComponent) {
+        // Push text before the widget
+        parts.push(content.slice(lastIndex, match.index));
+        // Push the widget component
+        parts.push(<WidgetComponent key={match.index} {...json.props} />);
+      }
+    } catch (error) {
+      console.error("Failed to parse widget JSON:", error);
+    }
+
+    lastIndex = widgetRegex.lastIndex;
+  }
+
+  // Push remaining text after the last widget
+  parts.push(content.slice(lastIndex));
+
+  return <div className="main-screen">{parts}</div>;
 };
 
 export default MainScreen;

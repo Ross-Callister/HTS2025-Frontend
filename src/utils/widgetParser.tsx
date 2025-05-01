@@ -1,6 +1,6 @@
 import React from "react";
-import FilterWidget from "../components/FilterWidget";
-import VolumeSlider from "../components/VolumeSlider";
+import FilterWidget from "../widgets/FilterWidget";
+import VolumeSlider from "../widgets/VolumeSlider";
 
 const widgetMap: { [key: string]: React.FC<any> } = {
   FilterWidget,
@@ -9,13 +9,13 @@ const widgetMap: { [key: string]: React.FC<any> } = {
 
 type JSONShape = {
   widget: string;
-  props: { [key: string]: any };
+  props?: { [key: string]: any };
 };
 
 export const parseWidgets = (text: string): (string | React.ReactElement)[] => {
-  // Regex to match JSON-like widget definitions
+  // Regex to match JSON-like widget definitions, with optional props
   const widgetRegex =
-    /{{\s*("widget":\s*"[^"]+",\s*"props":\s*{[\s\S]*?})\s*}}/g;
+    /{{\s*("widget":\s*"[^"]+"\s*(?:,\s*"props":\s*{[\s\S]*?})?)\s*}}/g;
 
   const parts = [];
   let lastIndex = 0;
@@ -30,8 +30,10 @@ export const parseWidgets = (text: string): (string | React.ReactElement)[] => {
       if (WidgetComponent) {
         // Push text before the widget
         parts.push(text.slice(lastIndex, match.index));
-        // Push the widget component
-        parts.push(<WidgetComponent key={match.index} {...json.props} />);
+        // Push the widget component with props if they exist
+        parts.push(
+          <WidgetComponent key={match.index} {...(json.props || {})} />
+        );
       }
     } catch (error) {
       console.error("Failed to parse widget JSON:", error);
